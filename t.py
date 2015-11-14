@@ -54,7 +54,4 @@ if __name__ == '__main__':
             CloseOrder.append(od)
 
     print "finished"
-    #print data.head()
-    #od = Order()
-    #od.setOrder(0,data.loc[0])
 
