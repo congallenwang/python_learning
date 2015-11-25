@@ -52,7 +52,9 @@ class Plotter(object):
 
     def plot(self,Oderlist):
         plt.plot(np.array(self.data.loc[:,['close']]))
-        plt.plot(np.array(self.data.loc[:,['m20']]),'r+')
+        plt.plot(np.array(self.data.loc[:,'m20']),'r+')
+        #draw bottom line
+        plt.plot(np.array(self.data.loc[:,'l20']),'b*')
         for o in Oderlist:
 	    t = o.getOrder()
             plt.plot(t[0],t[2]+1,'g^')
@@ -63,7 +65,7 @@ class Plotter(object):
                 plt.plot(x,y,'g')
             else:
                 plt.plot(x,y,'r')
-
+        plt.show()
 
 def checkSell(o,d):
     #update hh if needed
@@ -77,22 +79,70 @@ def checkSell(o,d):
     return False
 
 
+class Strategy(object):
+    def __init__(self,data,OO,CO):
+        self.__dt=data
+        self.__oo=OO
+        self.__co=CO        
+
+    def run(self):
+        for i in range(30,len(self.__dt)):        
+            #check for buy postion
+            if self.__dt.loc[i].close >= self.__dt.loc[i-1].m20 and len(self.__oo)==0:
+                od = Order()
+                od.setOrder(i,self.__dt.loc[i])
+                self.__oo.append(od)
+
+            #check for short position
+            if len(self.__oo)>0:            
+                if checkSell(self.__oo[0],self.__dt.loc[i]) == True:
+                    od = self.__oo.pop(0)
+                    od.closeOrder(i,self.__dt.loc[i])
+                    self.__co.append(od)
+        
+            #calculate daily margin
+            margin = 0.0
+            for o in self.__oo:
+                margin += self.__dt.loc[i].close-o.getPrice()
+        
+            for o in self.__co:
+                margin += o.getMargin()
+        
+            self.__dt.loc[i,['margin']]=1000.0+margin
+
+        #end for
+     
+        #handle last order if any
+        if len(self.__oo)>0:
+            od = self.__oo.pop(0)
+            od.closeOrder(i,self.__dt.loc[len(self.__dt)-1])
+            self.__co.append(od)
+
 if __name__ == '__main__':
     data = pd.read_csv('000001.csv')
     OpenOrder = []
     CloseOrder = []
     
+    #top line
     data['m20'] = pd.rolling_max(data.close,20)
-    
+   
+    #bottom line
+    data['l20'] = pd.rolling_min(data.close,20)
+
     data['margin']=np.zeros(len(data))
     """
     for i in range(0,len(data)):
         data.loc[i,'ndate']=fn.date2num(ps.parse(data.loc[i,'date']))
     """    
+    #create the strategy
+    st = Strategy(data,OpenOrder,CloseOrder)
+
+
     #create the plot
     plotter = Plotter(data)
-
-
+    
+    st.run()
+    """
     for i in range(30,len(data)):        
         #check for buy postion
         if data.loc[i].close >= data.loc[i-1].m20 and len(OpenOrder)==0:
@@ -124,6 +174,7 @@ if __name__ == '__main__':
         od = OpenOrder.pop(0)
         od.closeOrder(i,data.loc[len(data)-1])
         CloseOrder.append(od)
+    """
 
     print "finished"
     plotter.plot(CloseOrder)
