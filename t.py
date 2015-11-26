@@ -51,10 +51,16 @@ class Plotter(object):
         pass
 
     def plot(self,Oderlist):
-        plt.plot(np.array(self.data.loc[:,['close']]))
-        plt.plot(np.array(self.data.loc[:,'m20']),'r+')
+        plt.plot(np.array(self.data.loc[:,['close']]),'k')
+        #draw top line
+        plt.plot(np.array(self.data.loc[:,'m20']),'r.')
         #draw bottom line
-        plt.plot(np.array(self.data.loc[:,'l20']),'b*')
+        plt.plot(np.array(self.data.loc[:,'l20']),'b.')
+        #draw MA 
+        plt.plot(np.array(self.data.ma30),'y')
+        plt.plot(np.array(self.data.ma60),'g')
+
+        
         for o in Oderlist:
 	    t = o.getOrder()
             plt.plot(t[0],t[2]+1,'g^')
@@ -77,6 +83,24 @@ def checkSell(o,d):
         return True
 
     return False
+
+
+
+
+class Indicator(object):
+    def __init__(self,data):
+        self.__dt=data
+
+    def genIndicator(self):
+        #top line
+        self.__dt['m20'] = pd.rolling_max(self.__dt.close,20)
+        #bottom line
+        self.__dt['l20'] = pd.rolling_min(self.__dt.close,20)
+        #MA30
+        self.__dt['ma30'] = ta.MA(np.array(self.__dt.close),30)
+        #MA60
+        self.__dt['ma60'] = ta.MA(np.array(self.__dt.close),60)
+
 
 
 class Strategy(object):
@@ -122,18 +146,24 @@ if __name__ == '__main__':
     data = pd.read_csv('000001.csv')
     OpenOrder = []
     CloseOrder = []
-    
+   
+    """
     #top line
     data['m20'] = pd.rolling_max(data.close,20)
    
     #bottom line
     data['l20'] = pd.rolling_min(data.close,20)
+    """
 
     data['margin']=np.zeros(len(data))
     """
     for i in range(0,len(data)):
         data.loc[i,'ndate']=fn.date2num(ps.parse(data.loc[i,'date']))
     """    
+    #create indicator
+    ind = Indicator(data)
+    ind.genIndicator()
+
     #create the strategy
     st = Strategy(data,OpenOrder,CloseOrder)
 
