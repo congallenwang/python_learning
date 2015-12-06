@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as grid
 import talib as ta
 import matplotlib.finance as fn
 import dateutil.parser as ps
@@ -8,6 +9,8 @@ import dateutil.parser as ps
 
 #print data.head()
 
+
+#Order class
 class Order(object):
     def __init__(self):
         self.__price = 0
@@ -45,32 +48,78 @@ class Order(object):
     def isFinished(self):
         return self.__finished
 
+
+#Indicator for the TA 
+class Indicator(object):
+    def __init__(self,data):
+        self.__dt=data
+
+    def genIndicator(self):
+        #top line
+        self.__dt['m20'] = pd.rolling_max(self.__dt.close,20)
+        self.__dt.m20=self.__dt.m20.shift(1)
+        #bottom line
+        self.__dt['l20'] = pd.rolling_min(self.__dt.close,20)
+        self.__dt.l20=self.__dt.l20.shift(1)
+        #MA30
+        self.__dt['ma30'] = ta.MA(np.array(self.__dt.close),30)
+        #MA60
+        self.__dt['ma60'] = ta.MA(np.array(self.__dt.close),60)
+
+
+
+#plot class response for graphic output
 class Plotter(object):
     def __init__(self,data):
         self.data = data;
         pass
 
     def plot(self,Oderlist):
-        plt.plot(np.array(self.data.loc[:,['close']]),'k')
-        #draw top line
-        plt.plot(np.array(self.data.loc[:,'m20']),'r.')
-        #draw bottom line
-        plt.plot(np.array(self.data.loc[:,'l20']),'b.')
-        #draw MA 
-        plt.plot(np.array(self.data.ma30),'y')
-        plt.plot(np.array(self.data.ma60),'g')
+        #set height ration to 4:1
+        gs=grid.GridSpec(2,1,height_ratios=[4,1])
+       
+        fig=plt.figure()
 
+        #ax1 for main chart, ax2 for margin
+        ax1=fig.add_subplot(gs[0])
+        ax2=fig.add_subplot(gs[1],sharex=ax1)
         
+        #draw on main chart
+        ax1.plot(np.array(self.data.loc[:,['close']]),'k')
+        #draw top line
+        ax1.plot(np.array(self.data.loc[:,'m20']),'r.')
+        #draw bottom line
+        ax1.plot(np.array(self.data.loc[:,'l20']),'b.')
+        #draw MA 
+        ax1.plot(np.array(self.data.ma30),'y')
+        ax1.plot(np.array(self.data.ma60),'g')
+       
+        #draw order b/s mark
         for o in Oderlist:
-	    t = o.getOrder()
-            plt.plot(t[0],t[2]+1,'g^')
-            plt.plot(t[1],t[3]+1,'rv')
+	    """
+            t0=__index
+            t1=__closeIndex
+            t2=__price
+            t3=__closePrice
+            t4=__margin
+            """
+            t = o.getOrder()
+            ax1.plot(t[0],t[2]+1,'g^')
+            ax1.plot(t[1],t[3]+1,'rv')
             x=[t[0],t[1]]
             y=[t[2],t[3]]
 	    if t[3]>=t[2]:
-                plt.plot(x,y,'g')
+                ax1.plot(x,y,'g')
             else:
-                plt.plot(x,y,'r')
+                ax1.plot(x,y,'r')
+        
+        #draw magin on ax2
+        ax2.plot(self.data.margin,'g')
+
+        plt.tight_layout()
+        plt.subplots_adjust(hspace=0.1)
+        plt.xlim(2000,3000)
+        #show the plot
         plt.show()
 
 def checkSell(o,d):
@@ -84,25 +133,7 @@ def checkSell(o,d):
 
     return False
 
-
-
-
-class Indicator(object):
-    def __init__(self,data):
-        self.__dt=data
-
-    def genIndicator(self):
-        #top line
-        self.__dt['m20'] = pd.rolling_max(self.__dt.close,20)
-        #bottom line
-        self.__dt['l20'] = pd.rolling_min(self.__dt.close,20)
-        #MA30
-        self.__dt['ma30'] = ta.MA(np.array(self.__dt.close),30)
-        #MA60
-        self.__dt['ma60'] = ta.MA(np.array(self.__dt.close),60)
-
-
-
+#Stategy class
 class Strategy(object):
     def __init__(self,data,OO,CO):
         self.__dt=data
@@ -142,24 +173,17 @@ class Strategy(object):
             od.closeOrder(i,self.__dt.loc[len(self.__dt)-1])
             self.__co.append(od)
 
+"""
+Main Entry point
+"""
 if __name__ == '__main__':
     data = pd.read_csv('000001.csv')
     OpenOrder = []
     CloseOrder = []
    
-    """
-    #top line
-    data['m20'] = pd.rolling_max(data.close,20)
-   
-    #bottom line
-    data['l20'] = pd.rolling_min(data.close,20)
-    """
-
+    #init the margin column  
     data['margin']=np.zeros(len(data))
-    """
-    for i in range(0,len(data)):
-        data.loc[i,'ndate']=fn.date2num(ps.parse(data.loc[i,'date']))
-    """    
+ 
     #create indicator
     ind = Indicator(data)
     ind.genIndicator()
@@ -167,45 +191,11 @@ if __name__ == '__main__':
     #create the strategy
     st = Strategy(data,OpenOrder,CloseOrder)
 
-
     #create the plot
     plotter = Plotter(data)
     
     st.run()
-    """
-    for i in range(30,len(data)):        
-        #check for buy postion
-        if data.loc[i].close >= data.loc[i-1].m20 and len(OpenOrder)==0:
-            od = Order()
-            od.setOrder(i,data.loc[i])
-            OpenOrder.append(od)
-
-        #check for short position
-        if len(OpenOrder)>0:            
-            if checkSell(OpenOrder[0],data.loc[i]) == True:
-                od = OpenOrder.pop(0)
-                od.closeOrder(i,data.loc[i])
-                CloseOrder.append(od)
-        
-        #calculate daily margin
-        margin = 0.0
-        for o in OpenOrder:
-            margin += data.loc[i].close-o.getPrice()
-        
-        for o in CloseOrder:
-            margin += o.getMargin()
-        
-        data.loc[i,['margin']]=1000.0+margin
-
-        #end for
-
-    #handle last order if any
-    if len(OpenOrder)>0:
-        od = OpenOrder.pop(0)
-        od.closeOrder(i,data.loc[len(data)-1])
-        CloseOrder.append(od)
-    """
-
+    
     print "finished"
     plotter.plot(CloseOrder)
 
