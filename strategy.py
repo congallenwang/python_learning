@@ -18,7 +18,9 @@ class Strategy(object):
 
         return False
 
-
+    """
+    simple toitose trategy
+    """
     def run(self):
         for i in range(30,len(self.__dt)):        
             #check for buy postion
@@ -52,6 +54,13 @@ class Strategy(object):
             od.closeOrder(i,self.__dt.loc[len(self.__dt)-1])
             self.__co.append(od)
 
+    """
+    Zone strategy
+    """
+    def ZoneCheckBuy(self,i)
+        d = self._dt.loc[i]
+        pass
+
     def run1(self):
-	pass
+	    pass
 
