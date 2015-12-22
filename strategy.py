@@ -57,7 +57,7 @@ class Strategy(object):
     """
     Zone strategy
     """
-    def ZoneCheckBuy(self,i)
+    def ZoneCheckBuy(self,i):
         d = self._dt.loc[i]
         pass
 

@@ -12,6 +12,7 @@ sys.path.append("/home/alan/Work/stock/python_learning")
 from indicator import Indicator
 from strategy import Strategy
 from plotter import Plotter
+from dataconstructor import DataConstructor
 
 #print pd.__version__
 
@@ -21,10 +22,15 @@ from plotter import Plotter
 Main Entry point
 """
 if __name__ == '__main__':
-    data = pd.read_csv('000001.csv')
-   
+    
+    dt = DataConstructor()
+    dt.BuildData('002215')
+    
+    data = dt.GetData()
+    #data = pd.read_csv('000001.csv')
+    """   
     #init the margin column  
-    data['margin']=np.zeros(len(data))
+    #data['margin']=np.zeros(len(data))
  
     #create indicator
     ind = Indicator(data)
@@ -42,5 +48,5 @@ if __name__ == '__main__':
     
     print "finished"
     plotter.plot(CloseOrder)
-
+    """
 
