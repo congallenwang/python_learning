@@ -62,5 +62,9 @@ class Strategy(object):
         pass
 
     def run1(self):
-	    pass
+	    for i in range(30,len(self.__dt)): 
+        
+
+
+        pass
 

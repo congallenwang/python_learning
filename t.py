@@ -27,6 +27,12 @@ if __name__ == '__main__':
     dt.BuildData('002215')
     
     data = dt.GetData()
+    
+    CloseOrder = []
+
+    st = Strategy(data,CloseOrder)
+
+    st.run1()
     #data = pd.read_csv('000001.csv')
     """   
     #init the margin column  
