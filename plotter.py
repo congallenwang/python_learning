@@ -55,3 +55,13 @@ class Plotter(object):
         #show the plot
         plt.show()
 
+    def plot1(self,Orderlist):
+        fig,ax=plt.subplots()
+        ax.plot(self.data.close,'r')
+        for o in Orderlist:
+            t=o.getOrder()
+            ax.plot(t[0],t[2],'g^')
+        
+        plt.show()
+
+        pass

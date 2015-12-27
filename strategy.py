@@ -18,6 +18,9 @@ class Strategy(object):
 
         return False
 
+    def getoo(self):
+        return self.__oo
+
     """
     simple toitose trategy
     """
@@ -57,14 +60,17 @@ class Strategy(object):
     """
     Zone strategy
     """
-    def ZoneCheckBuy(self,i):
+    def ZoneCheckBuy(self,i): 
         d = self._dt.loc[i]
         pass
 
     def run1(self):
-	    for i in range(30,len(self.__dt)): 
-        
-
-
-        pass
+        for i in range(30,len(self.__dt)): 
+            index = self.__dt.index.values[i]
+            prv_idx = self.__dt.index.values[i-1]
+            if self.__dt.IN_T[index]==1 and self.__dt.IN_T[prv_idx]==0:
+                od = Order()
+                od.setOrder(i,self.__dt.loc[index])
+                self.__oo.append(od)
+            pass     
 

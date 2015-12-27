@@ -32,7 +32,10 @@ if __name__ == '__main__':
 
     st = Strategy(data,CloseOrder)
 
+    plotter = Plotter(data)
     st.run1()
+
+    plotter.plot1(st.getoo())
     #data = pd.read_csv('000001.csv')
     """   
     #init the margin column  
